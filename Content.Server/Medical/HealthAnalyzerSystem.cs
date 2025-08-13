@@ -53,6 +53,8 @@ using Content.Shared.Body.Part;
 using Content.Shared.Body.Systems;
 using Content.Shared._Shitmed.Targeting;
 using System.Linq;
+using Content.Server._Impstation.Traits.Components;
+
 
 namespace Content.Server.Medical;
 
@@ -292,6 +294,9 @@ public sealed class HealthAnalyzerSystem : EntitySystem
             bloodAmount = bloodSolution.MaxVolume != 0 ? bloodSolution.FillFraction : 0;
             bleeding = bloodstream.BleedAmount > 0;
         }
+
+        if (TryComp<RandomUnrevivableComponent>(target, out var rdnrComponent) && rdnrComponent is { Unrevivable: true, Analyzable: true }) // IMP
+            unrevivable = true;
 
         // Shitmed Change Start
         Dictionary<TargetBodyPart, TargetIntegrity>? body = null;

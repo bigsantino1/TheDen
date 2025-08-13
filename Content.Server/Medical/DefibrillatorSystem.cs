@@ -23,6 +23,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
+using Content.Server._Impstation.Traits.Components;
 using Content.Server.Atmos.Rotting;
 using Content.Server.Chat.Systems;
 using Content.Server.DoAfter;
@@ -49,6 +50,7 @@ using Content.Shared.Toggleable;
 using Robust.Shared.Audio.Systems;
 using Robust.Shared.Player;
 using Robust.Shared.Timing;
+using Robust.Shared.Random;
 
 namespace Content.Server.Medical;
 
@@ -73,6 +75,7 @@ public sealed class DefibrillatorSystem : EntitySystem
     [Dependency] private readonly SharedAudioSystem _audio = default!;
     [Dependency] private readonly UseDelaySystem _useDelay = default!;
     [Dependency] private readonly SharedMindSystem _mind = default!;
+    [Dependency] private readonly IRobustRandom _random = default!; // IMP
 
     /// <inheritdoc/>
     public override void Initialize()
@@ -214,6 +217,19 @@ public sealed class DefibrillatorSystem : EntitySystem
 
         ICommonSession? session = null;
 
+        if (TryComp<RandomUnrevivableComponent>(target, out var rdnrComponent) && !rdnrComponent.Unrevivable && _mobState.IsDead(target, mob)) // IMP RDNR START
+        {
+            if (rdnrComponent.Chance < _random.NextDouble())
+            {
+                rdnrComponent.Chance = 0f;
+                rdnrComponent.Unrevivable = true;
+            }
+            else
+            {
+                rdnrComponent.Chance -= 0.1f;
+            }
+        } // IMP RDNR END
+
         var dead = true;
         if (_rotting.IsRotten(target))
         {
@@ -222,32 +238,40 @@ public sealed class DefibrillatorSystem : EntitySystem
         }
         else
         {
-            if (_mobState.IsDead(target, mob))
-                _damageable.TryChangeDamage(target, component.ZapHeal, true, origin: uid);
-
-            if (_mobThreshold.TryGetThresholdForState(target, MobState.Dead, out var threshold) &&
-                TryComp<DamageableComponent>(target, out var damageableComponent) &&
-                damageableComponent.TotalDamage < threshold)
+            if (rdnrComponent is { Unrevivable: true }) // IMP RDNR START
             {
-                _mobState.ChangeMobState(target, MobState.Critical, mob, uid);
-                dead = false;
-            }
-
-            if (_mind.TryGetMind(target, out _, out var mind) &&
-                mind.Session is { } playerSession)
-            {
-                session = playerSession;
-                // notify them they're being revived.
-                if (mind.CurrentEntity != target)
-                {
-                    _euiManager.OpenEui(new ReturnToBodyEui(mind, _mind), session);
-                }
-            }
-            else
-            {
-                _chatManager.TrySendInGameICMessage(uid, Loc.GetString("defibrillator-no-mind"),
+                _chatManager.TrySendInGameICMessage(uid, Loc.GetString("defibrillator-unrevivable"),
                     InGameICChatType.Speak, true);
             }
+            else
+            { // IMP RDNR END
+                if (_mobState.IsDead(target, mob))
+                    _damageable.TryChangeDamage(target, component.ZapHeal, true, origin: uid);
+
+                if (_mobThreshold.TryGetThresholdForState(target, MobState.Dead, out var threshold) &&
+                    TryComp<DamageableComponent>(target, out var damageableComponent) &&
+                    damageableComponent.TotalDamage < threshold)
+                {
+                    _mobState.ChangeMobState(target, MobState.Critical, mob, uid);
+                    dead = false;
+                }
+
+                if (_mind.TryGetMind(target, out _, out var mind) &&
+                    mind.Session is { } playerSession)
+                {
+                    session = playerSession;
+                    // notify them they're being revived.
+                    if (mind.CurrentEntity != target)
+                    {
+                        _euiManager.OpenEui(new ReturnToBodyEui(mind, _mind), session);
+                    }
+                }
+                else
+                {
+                    _chatManager.TrySendInGameICMessage(uid, Loc.GetString("defibrillator-no-mind"),
+                        InGameICChatType.Speak, true);
+                }
+            } // IMP
         }
 
         var sound = dead || session == null

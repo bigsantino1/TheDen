@@ -109,6 +109,9 @@ ui-options-admin-sounds = Play Admin Sounds
 ui-options-volume-label = Volume
 ui-options-volume-percent = { TOSTRING($volume, "P0") }
 
+# DEN: Jukebox Slider
+ui-options-jukebox-volume = Jukebox Volume:
+
 ## Graphics menu
 
 ui-options-show-held-item = Show held item next to cursor

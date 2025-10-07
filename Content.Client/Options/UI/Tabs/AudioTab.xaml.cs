@@ -56,6 +56,7 @@ namespace Content.Client.Options.UI.Tabs
                 LobbyVolumeSlider,
                 InterfaceVolumeSlider,
                 AnnouncerVolumeSlider,
+                JukeboxVolumeSlider, // DEN: Jukebox Slider
 
                 LobbyMusicCheckBox,
                 RestartSoundsCheckBox,
@@ -101,6 +102,7 @@ namespace Content.Client.Options.UI.Tabs
                 LobbyVolumeSlider,
                 InterfaceVolumeSlider,
                 AnnouncerVolumeSlider,
+                JukeboxVolumeSlider, // DEN: Jukebox Slider
 
                 LobbyMusicCheckBox,
                 RestartSoundsCheckBox,
@@ -141,6 +143,8 @@ namespace Content.Client.Options.UI.Tabs
             _cfg.SetCVar(CCVars.LobbyMusicVolume, LobbyVolumeSlider.Value / 100f * ContentAudioSystem.LobbyMultiplier);
             _cfg.SetCVar(CCVars.InterfaceVolume, InterfaceVolumeSlider.Value / 100f * ContentAudioSystem.InterfaceMultiplier);
             _cfg.SetCVar(CCVars.AnnouncerVolume, AnnouncerVolumeSlider.Value / 100f * ContentAudioSystem.AnnouncerMultiplier);
+            _cfg.SetCVar(CCVars.JukeboxVolume, JukeboxVolumeSlider.Value / 100f * ContentAudioSystem.JukeboxMultiplier); // DEN: Jukebox Slider
+
 
             _cfg.SetCVar(CCVars.MaxAmbientSources, (int)AmbienceSoundsSlider.Value);
 
@@ -167,6 +171,7 @@ namespace Content.Client.Options.UI.Tabs
             LobbyVolumeSlider.Value = _cfg.GetCVar(CCVars.LobbyMusicVolume) * 100f / ContentAudioSystem.LobbyMultiplier;
             InterfaceVolumeSlider.Value = _cfg.GetCVar(CCVars.InterfaceVolume) * 100f / ContentAudioSystem.InterfaceMultiplier;
             AnnouncerVolumeSlider.Value = _cfg.GetCVar(CCVars.AnnouncerVolume) * 100f / ContentAudioSystem.AnnouncerMultiplier;
+            JukeboxVolumeSlider.Value = _cfg.GetCVar(CCVars.JukeboxVolume) * 100f / ContentAudioSystem.JukeboxMultiplier; // DEN: Jukebox Slider
 
             AmbienceSoundsSlider.Value = _cfg.GetCVar(CCVars.MaxAmbientSources);
 
@@ -195,6 +200,8 @@ namespace Content.Client.Options.UI.Tabs
                 Math.Abs(InterfaceVolumeSlider.Value - _cfg.GetCVar(CCVars.InterfaceVolume) * 100f / ContentAudioSystem.InterfaceMultiplier) < 0.01f;
             var isAnnouncerVolumeSame =
                 Math.Abs(AnnouncerVolumeSlider.Value - _cfg.GetCVar(CCVars.AnnouncerVolume) * 100f / ContentAudioSystem.AnnouncerMultiplier) < 0.01f;
+            var isJukeboxVolumeSame = // DEN: Jukebox Slider
+                Math.Abs(JukeboxVolumeSlider.Value - _cfg.GetCVar(CCVars.JukeboxVolume) * 100f / ContentAudioSystem.JukeboxMultiplier) < 0.01f;
 
             var isAmbientSoundsSame = (int)AmbienceSoundsSlider.Value == _cfg.GetCVar(CCVars.MaxAmbientSources);
             var isLobbySame = LobbyMusicCheckBox.Pressed == _cfg.GetCVar(CCVars.LobbyMusicEnabled);
@@ -205,7 +212,7 @@ namespace Content.Client.Options.UI.Tabs
             var isEverythingSame = isMasterVolumeSame && isMidiVolumeSame && isAmbientVolumeSame
                 && isAmbientMusicVolumeSame && isAmbientSoundsSame && isLobbySame && isRestartSoundsSame && isEventSame
                 && isAnnouncerDisableMultipleSoundsSame && isAdminSoundsSame && isLobbyVolumeSame
-                && isInterfaceVolumeSame && isAnnouncerVolumeSame;
+                && isInterfaceVolumeSame && isAnnouncerVolumeSame && isJukeboxVolumeSame;
             ApplyButton.Disabled = isEverythingSame;
             ResetButton.Disabled = isEverythingSame;
             MasterVolumeLabel.Text =
@@ -223,6 +230,8 @@ namespace Content.Client.Options.UI.Tabs
             AnnouncerVolumeLabel.Text =
                 Loc.GetString("ui-options-volume-percent", ("volume", AnnouncerVolumeSlider.Value / 100));
             AmbienceSoundsLabel.Text = ((int)AmbienceSoundsSlider.Value).ToString();
+            JukeboxVolumeLabel.Text = // DEN: Jukebox Slider
+                Loc.GetString("ui-options-volume-percent", ("volume", JukeboxVolumeSlider.Value / 100));
         }
     }
 }

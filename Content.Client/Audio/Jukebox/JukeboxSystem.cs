@@ -5,8 +5,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later AND MIT
 
 using Content.Shared.Audio.Jukebox;
+using Content.Shared.CCVar;
 using Robust.Client.Animations;
 using Robust.Client.GameObjects;
+using Robust.Shared.Audio.Components;
+using Robust.Shared.Audio.Systems;
+using Robust.Shared.Configuration;
 using Robust.Shared.Prototypes;
 
 namespace Content.Client.Audio.Jukebox;
@@ -18,6 +22,10 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
     [Dependency] private readonly AnimationPlayerSystem _animationPlayer = default!;
     [Dependency] private readonly SharedAppearanceSystem _appearanceSystem = default!;
     [Dependency] private readonly SharedUserInterfaceSystem _uiSystem = default!;
+    [Dependency] private readonly IConfigurationManager _configManager = default!;
+
+    public float JukeboxGain => _configManager.GetCVar(CCVars.JukeboxVolume);
+    public float JukeboxVolume => SharedAudioSystem.GainToVolume(JukeboxGain);
 
     public override void Initialize()
     {
@@ -26,7 +34,18 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
         SubscribeLocalEvent<JukeboxComponent, AnimationCompletedEvent>(OnAnimationCompleted);
         SubscribeLocalEvent<JukeboxComponent, AfterAutoHandleStateEvent>(OnJukeboxAfterState);
 
+        Subs.CVar(_configManager, CCVars.JukeboxVolume, JukeboxVolumeCVarChanged, true);
+
         _protoManager.PrototypesReloaded += OnProtoReload;
+    }
+
+    private void JukeboxVolumeCVarChanged(float gain)
+    {
+        var enumerator = AllEntityQuery<JukeboxComponent>();
+        while (enumerator.MoveNext(out var uid, out var jukebox))
+        {
+            Audio.SetVolume(jukebox.AudioStream, SharedAudioSystem.GainToVolume(gain), dirty: false);
+        }
     }
 
     public override void Shutdown()
@@ -57,6 +76,11 @@ public sealed class JukeboxSystem : SharedJukeboxSystem
             return;
 
         bui.Reload();
+
+        if (ent.Comp.AudioStream == null || !Audio.IsPlaying(ent.Comp.AudioStream)) // DEN: Jukebox Slider
+            return;
+
+        Audio.SetVolume(ent.Comp.AudioStream, JukeboxVolume, dirty: false); // DEN: Jukebox Slider
     }
 
     private void OnAnimationCompleted(EntityUid uid, JukeboxComponent component, AnimationCompletedEvent args)
